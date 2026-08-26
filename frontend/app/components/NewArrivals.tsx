@@ -12,13 +12,20 @@ type Product = {
 
 export default function NewArrivals() {
   const [products, setProducts] = useState<Product[]>([]);
-  // ১. সব প্রোডাক্ট দেখাবে নাকি ৮টি দেখাবে তা ট্র্যাক করার জন্য State
   const [showAll, setShowAll] = useState<boolean>(false);
 
-  useEffect(function () {
+  // ১. পরিবেশ অনুযায়ী ডাইনামিক API URL কনফিগারেশন
+  const API_BASE_URL = process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, "") || "";
+
+  useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("http://localhost:3000/api/admin/new-arrivals", {
+        // Vercel-এ লাইভ URL এবং লোকাল হোস্ট দুটোতেই কাজ করবে
+        const endpoint = API_BASE_URL 
+          ? `${API_BASE_URL}/api/admin/new-arrivals` 
+          : "/api/admin/new-arrivals";
+
+        const res = await fetch(endpoint, {
           cache: "no-store",
           headers: {
             "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -37,16 +44,15 @@ export default function NewArrivals() {
           }
         }
       } catch (err) {
-        console.error("CORS or Connection Error from Admin Port:", err);
+        console.error("Error fetching new arrivals:", err);
       }
     }
 
     fetchProducts();
-  }, []);
+  }, [API_BASE_URL]);
 
   if (products.length === 0) return null;
 
-  // ২. showAll true হলে সব দেখাবে, অন্যথায় প্রথম ৮টি দেখাবে
   const visibleProducts = showAll ? products : products.slice(0, 8);
 
   return (
@@ -99,7 +105,6 @@ export default function NewArrivals() {
         })}
       </div>
 
-      {/* ৩. প্রোডাক্ট সংখ্যা ৮ এর বেশি হলেই কেবল বাটনটি রেন্ডার হবে */}
       {products.length > 8 && (
         <div className="mt-8 flex justify-center sm:mt-12">
           <button
